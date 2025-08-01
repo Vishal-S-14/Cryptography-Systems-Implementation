@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knapsack Cryptosystem</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Knapsack Cryptosystem</h1>
+        <div>
+            <label for="message">Enter the Message (in Decimal): </label>
+            <input type="text" id="message" placeholder="Enter message...">
+        </div>
+        <button onclick="encryptDecrypt()">Encrypt / Decrypt</button>
+        <div id="output"></div>
+    </div>
+    <script>
+        function generatePrivateKey() {
+            let superincreasingSet = [1]; // Start with 1 as the first element
+            for (let i = 1; i < 5; i++) {
+                let y = Math.floor(Math.random() * 10) + 1;
+                superincreasingSet.push(superincreasingSet.reduce((acc, curr) => acc + curr, 0) + y);
+            }
+            return superincreasingSet;
+        }
+
+        function generateRandomNumberGreaterThan(limit) {
+            return Math.floor(Math.random() * limit) + limit + 1;
+        }
+
+        function generateCoprime(number) {
+            while (true) {
+                let candidate = Math.floor(Math.random() * (number - 2)) + 2;
+                if (gcd(candidate, number) === 1) {
+                    return candidate;
+                }
+            }
+        }
+
+        function gcd(a, b) {
+            while (b !== 0) {
+                let temp = b;
+                b = a % b;
+                a = temp;
+            }
+            return a;
+        }
+
+        function generatePublicKey(pKey, n, m) {
+            let pubKey = [];
+            for (let i of pKey) {
+                let x = (i * n) % m;
+                pubKey.push(x);
+            }
+            return pubKey;
+        }
+
+        function extendedGCD(a, b) {
+            if (a === 0) {
+                return [b, 0, 1];
+            } else {
+                let [gcd, x, y] = extendedGCD(b % a, a);
+                return [gcd, y - Math.floor(b / a) * x, x];
+            }
+        }
+
+        function modInverse(n, m) {
+            let [gcd, x, y] = extendedGCD(n, m);
+            if (gcd !== 1) {
+                throw new Error(`The modular inverse does not exist for ${n} mod ${m}`);
+            } else {
+                return (x % m + m) % m;
+            }
+        }
+
+        function knapsackEncrypt(pubKey, message) {
+            let m1 = message.toString(2);
+            let x = pubKey.length;
+            let b = m1.length;
+            let n = b % x;
+            if (n === 0) {
+                let y = Math.floor(b / x);
+                let binaryList = [];
+                for (let i = 0; i < m1.length; i += x) {
+                    binaryList.push(m1.slice(i, i + x));
+                }
+                let l = binaryList.map((binary) => {
+                    let sum = 0;
+                    for (let j = 0; j < x; j++) {
+                        let p = parseInt(binary[j]) * pubKey[j];
+                        sum += p;
+                    }
+                    return sum;
+                });
+                return l;
+            } else {
+                let y = x - n;
+                m1 = '0'.repeat(y) + m1;
+                let lenOfPaddedBinary = m1.length;
+                n = Math.floor(lenOfPaddedBinary / x);
+                let binaryList = [];
+                for (let i = 0; i < m1.length; i += x) {
+                    binaryList.push(m1.slice(i, i + x));
+                }
+                let l = binaryList.map((binary) => {
+                    let sum = 0;
+                    for (let j = 0; j < x; j++) {
+                        let p = parseInt(binary[j]) * pubKey[j];
+                        sum += p;
+                    }
+                    return sum;
+                });
+                return l;
+            }
+        }
+
+        function knapsackDecrypt(pKey, cipher, m, n) {
+            let nInverse = modInverse(n, m);
+            let pt1 = cipher.map((i) => {
+                let str = '';
+                let x = (i * nInverse) % m;
+                let rev = pKey.slice().sort((a, b) => b - a);
+                for (let i of rev) {
+                    if (i <= x) {
+                        x = x - i;
+                        str += '1';
+                    } else {
+                        str += '0';
+                    }
+                }
+                return str.split('').reverse().join('');
+            });
+            let str2 = pt1.join('');
+            return parseInt(str2, 2);
+        }
+
+        function encryptDecrypt() {
+            let pKey = generatePrivateKey();
+
+            let m = generateRandomNumberGreaterThan(pKey.reduce((acc, curr) => acc + curr, 0));
+            let n = generateCoprime(m);
+            let pubKey = generatePublicKey(pKey, n, m);
+
+            let message = parseInt(document.getElementById("message").value);
+            let binmess = message.toString(2)
+            let cipher = knapsackEncrypt(pubKey, message);
+            document.getElementById('output').innerHTML = ("Encrypted message: ", cipher);
+
+            let plaintext = knapsackDecrypt(pKey, cipher, m, n);
+            console.log("Decrypted Message: ", plaintext);
+
+            document.getElementById("output").innerHTML = `
+                <p>Binary Value: ${binmess}</p>
+                <p>Private Key: ${pKey}</p>
+                <p>m: ${m} v: ${n}</p> 
+                <p>Public Key: ${pubKey}</p>
+                <p>Encrypted message: ${cipher}</p>
+                <p>Binary Value After Decryption: ${binmess}</p>
+                <p>Decrypted message: ${plaintext}</p>
+            `;
+        }
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+        }
+    </style>
+</body>
+</html>

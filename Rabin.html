@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rabin Cryptosystem</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+        }
+
+        input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #output {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #fff;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Rabin Cryptosystem</h2>
+        <label for="primeP">Enter the Prime Number p (4k+3): </label>
+        <input type="number" id="primeP">
+
+        <label for="primeQ">Enter the Prime Number q (4k+3): </label>
+        <input type="number" id="primeQ">
+
+        <label for="message">Enter the Message: </label>
+        <input type="number" id="message">
+
+        <button onclick="generateRabinKey()">Generate Rabin Key</button>
+        <button onclick="encryptDecryptMessage()">Encrypt/Decrypt Message</button>
+        <button onclick="checkRabinResult()">Check Rabin Result</button>
+
+        <div id="output"></div>
+    </div>
+
+    <script>
+        let dec = []; // Declare dec as a global variable
+
+        function primeCheck(p) {
+            for (let i = 2; i <= Math.sqrt(p); i++) {
+                if (p < 2 || p % i === 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function prime4check(p) {
+            return p % 4 === 3;
+        }
+
+        function checkRabin(n, m) {
+            for (let i = 0; i < dec.length; i++) {
+                if (n === dec[i] && m === n) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function generateRabinKey() {
+            const p = parseInt(document.getElementById("primeP").value);
+            const q = parseInt(document.getElementById("primeQ").value);
+
+            if (!(primeCheck(p) && prime4check(p) && primeCheck(q) && prime4check(q))) {
+                alert("Invalid Input. Both primes should be valid (4k+3).");
+                return;
+            }
+
+            const n = p * q;
+            document.getElementById("output").innerHTML = `<p>Public Key (n): ${n}</p>`;
+        }
+
+        function addPadding(n) {
+            const str1 = n.toString();
+            const str2 = "1" + str1 + "1";
+            const str3 = parseInt(str2);
+            return str3;
+        }
+
+        function removePadding(n) {
+            const str3 = n.toString();
+            const str4 = str3.slice(1, -1);
+            const message = parseInt(str4);
+            return message;
+        }
+
+        function encryptDecryptMessage() {
+            const p = parseInt(document.getElementById("primeP").value);
+            const q = parseInt(document.getElementById("primeQ").value);
+            const n = p * q;
+            const m = parseInt(document.getElementById("message").value);
+
+            const M = addPadding(m);
+            const c = modPow(M, 2, n);
+
+            const a1 = modPow(c, (p + 1) / 4, p);
+            const a2 = p - a1;
+            const b1 = modPow(c, (q + 1) / 4, q);
+            const b2 = q - b1;
+
+            const m1 = (p * q) / p;
+            const m2 = (p * q) / q;
+
+            const y1 = modInverse(m1, p);
+            const y2 = modInverse(m2, q);
+
+            const x1 = (a1 * m1 * y1 + b1 * m2 * y2) % n;
+            const x2 = (a2 * m1 * y1 + b1 * m2 * y2) % n;
+            const x3 = (a1 * m1 * y1 + b2 * m2 * y2) % n;
+            const x4 = (a2 * m1 * y1 + b2 * m2 * y2) % n;
+
+            const l = [parseInt(x1), parseInt(x2), parseInt(x3), parseInt(x4)];
+            dec = [];
+            for (let i = 0; i < l.length; i++) {
+                dec.push(removePadding(l[i]));
+            }
+            document.getElementById("output").innerHTML = `
+            <p>The Possible Values are: ${l.join(', ')}</p>
+            <p>The After Removing the Values are: ${dec.join(', ')}</p>`;
+        }
+
+        function checkRabinResult() {
+            const num = parseInt(prompt("Enter the Number to Check: "));
+            const m = parseInt(document.getElementById("message").value);
+
+            if (!(checkRabin(num, m) && dec)) {
+                alert(`${num} is not a valid result.`);
+            } else {
+                alert(`${num} is a valid result.`);
+            }
+        }
+
+        function modPow(base, exponent, modulus) {
+            let result = 1;
+            while (exponent > 0) {
+                if (exponent % 2 === 1) {
+                    result = (result * base) % modulus;
+                }
+                base = (base * base) % modulus;
+                exponent = Math.floor(exponent / 2);
+            }
+            return result;
+        }
+
+        function modInverse(a, m) {
+            let m0 = m;
+            let t, q;
+            let x0 = 0, x1 = 1;
+
+            if (m === 1) {
+                return 0;
+            }
+
+            while (a > 1) {
+                q = Math.floor(a / m);
+                t = m;
+                m = a % m;
+                a = t;
+                t = x0;
+                x0 = x1 - q * x0;
+                x1 = t;
+            }
+
+            if (x1 < 0) {
+                x1 += m0;
+            }
+
+            return x1;
+        }
+    </script>
+</body>
+</html>

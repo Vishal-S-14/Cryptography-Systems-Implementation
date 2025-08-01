@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Man in the Middle Attack</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 20px;
+        }
+    
+        h1 {
+            color: #333;
+        }
+    
+        label {
+            display: block;
+            margin-top: 10px;
+            font-size: 16px;
+            color: #333;
+        }
+    
+        input {
+            width: 250px;
+            padding: 10px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+    
+        button {
+            padding: 12px 20px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+    
+        button:hover {
+            background-color: #45a049;
+        }
+    
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: left;
+            box-sizing: border-box;
+        }
+    </style>
+    
+    
+</head>
+<body>
+    <div class="container">
+        <h1>Man in the Middle Attack</h1>
+        
+        <label for="prime">Enter Prime Number (P): </label>
+        <input type="number" id="prime">
+        
+        <label for="generator">Enter Primitive Root (g): </label>
+        <input type="number" id="generator">
+
+        <label for="alice">Enter Alice's Private Key (a): </label>
+        <input type="number" id="alice">
+
+        <label for="bob">Enter Bob's Private Key (b): </label>
+        <input type="number" id="bob">
+
+        <label for="oscar1">Enter Oscar's Private Key (o1): </label>
+        <input type="number" id="oscar1">
+
+        <label for="oscar2">Enter Oscar's Private Key (o2): </label>
+        <input type="number" id="oscar2">
+
+        <button onclick="generateKeys()">Generate Keys</button>
+
+        <div id="output"></div>
+    </div>
+
+    <script>
+        function prime_check(p) {
+    if (p < 2) {
+        return false;
+    }
+    for (var i = 2; i <= Math.sqrt(p); i++) {
+        if (p % i === 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function primitive_check(g, p, L) {
+    for (var i = 1; i < p; i++) {
+        var count = 0;
+        for (var j = 0; j < L.length; j++) {
+            if (L[j] === i) {
+                count++;
+                if (count > 1) {
+                    L = [];
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+function generateKeys() {
+    var P = parseInt(document.getElementById('prime').value);
+    var g = parseInt(document.getElementById('generator').value);
+    var a = parseInt(document.getElementById('alice').value);
+    var b = parseInt(document.getElementById('bob').value);
+    var o1 = parseInt(document.getElementById('oscar1').value);
+    var o2 = parseInt(document.getElementById('oscar2').value);
+
+    if (!prime_check(P)) {
+        alert("Number is not a Prime. Please enter a valid Prime Number.");
+        return;
+    }
+
+    var l = [];
+    if (!primitive_check(g, P, l)) {
+        alert(`Number ${g} is not a Primitive Root of ${P}. Please try again.`);
+        return;
+    }
+
+    var x = Math.pow(g, a) % P;
+    var w1 = Math.pow(g, o1) % P;
+    var w2 = Math.pow(g, o2) % P;
+    var y = Math.pow(g, b) % P;
+
+    var k1 = Math.pow(w2, a) % P;
+    var k2 = Math.pow(x, o2) % P;
+
+    var k3 = Math.pow(y, o1) % P;
+    var k4 = Math.pow(w1, b) % P;
+
+    var outputDiv = document.getElementById('output');
+    outputDiv.innerHTML = `
+        <p>Alice Public Key: ${x}</p>
+        <p>Bob Public Key: ${y}</p>
+        <p>Oscar 1st Public Key: ${w1}</p>
+        <p>Oscar 2nd Public Key: ${w2}</p>
+        <p>Alice Retrieved Key: ${k1}</p>
+        <p>Oscar Retrieved Key: ${k2}</p>
+        <p>Oscar Retrieved Key: ${k3}</p>
+        <p>Bob Retrieved Key: ${k4}</p>
+    `;
+}
+
+    </script>
+</body>
+</html>

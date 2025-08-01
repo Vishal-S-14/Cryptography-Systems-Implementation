@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diffie-Hellman Cryptosystem</title>
+    <style>
+    body {
+        font-family: 'Arial', sans-serif;
+        margin: 20px;
+        background-color: #f4f4f4;
+        color: #333;
+    }
+
+    h1 {
+        color: #007bff;
+    }
+
+    label {
+        display: block;
+        margin-top: 10px;
+        font-size: 16px;
+        color: #555;
+    }
+
+    input {
+        margin-top: 5px;
+        margin-bottom: 10px;
+        padding: 8px;
+        font-size: 14px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    button {
+        margin-top: 10px;
+        padding: 10px 20px;
+        cursor: pointer;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+
+    #output {
+        margin-top: 20px;
+    }
+
+    #output p {
+        margin-bottom: 8px;
+        font-size: 16px;
+    }
+
+    strong {
+        color: #007bff;
+    }
+
+    span {
+        color: #28a745;
+        font-weight: bold;
+    }
+    </style>
+</head>
+<body>
+    <h1>Diffie-Hellman Cryptosystem</h1>
+
+    <label for="primeNumber">Prime Number (P):</label>
+    <input type="number" id="primeNumber">
+
+    <label for="primitiveRoot">Primitive Root (g):</label>
+    <input type="number" id="primitiveRoot">
+
+    <label for="privateKeyAlice">Private Key for Alice (a):</label>
+    <input type="number" id="privateKeyAlice">
+
+    <label for="privateKeyBob">Private Key for Bob (b):</label>
+    <input type="number" id="privateKeyBob">
+
+    <button onclick="generatePublicKeys()">Generate Public Keys</button>
+
+    <div id="output">
+        <p><strong>Person-1 Public Key:</strong> <span id="alicePublicKey"></span></p>
+        <p><strong>Person-2 Public Key:</strong> <span id="bobPublicKey"></span></p>
+        <p><strong>Person-1 Retrieved Key:</strong> <span id="aliceRetrievedKey"></span></p>
+        <p><strong>Person-2 Retrieved Key:</strong> <span id="bobRetrievedKey"></span></p>
+    </div>
+
+    <script>
+        function isPrime(num) {
+            if (num < 2) return false;
+            for (let i = 2; i <= Math.sqrt(num); i++) {
+                if (num % i === 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function primeCheck(p) {
+            if (!isPrime(p)) {
+                alert("Number is not a Prime. Please enter a correct Prime Number.");
+                return false;
+            }
+            return true;
+        }
+
+        function modPow(base, exponent, modulus) {
+                if (modulus <= 0) return 0;
+                var result = 1;
+                base = base % modulus;
+
+                while (exponent > 0) {
+                    if (exponent % 2 === 1) {
+                        result = (result * base) % modulus;
+                    }
+                    exponent = Math.floor(exponent / 2);
+                    base = (base * base) % modulus;
+                }
+
+                return result;
+            }
+
+        function primitiveCheck(g, p) {
+            let L = [];
+            for (let i = 1; i < p; i++) {
+                L.push(modPow(g, i, p));
+            }
+            for (let i = 1; i < p; i++) {
+                if (L.indexOf(i) !== L.lastIndexOf(i)) {
+                    alert(`Number ${g} is not a Primitive Root of ${p}. Please try again.`);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function generatePublicKeys() {
+            var P = document.getElementById('primeNumber').valueAsNumber;
+            var g = document.getElementById('primitiveRoot').valueAsNumber;
+            var a = document.getElementById('privateKeyAlice').valueAsNumber;
+            var b = document.getElementById('privateKeyBob').valueAsNumber;
+
+            if (!primeCheck(P) || !primitiveCheck(g, P)) {
+                return;
+            }
+
+            var x = modPow(g, a, P);
+            var y = modPow(g, b, P);
+
+            document.getElementById('alicePublicKey').innerText = x;
+            document.getElementById('bobPublicKey').innerText = y;
+
+            var k1 = modPow(y, a, P);
+            var k2 = modPow(x, b, P);
+
+            document.getElementById('aliceRetrievedKey').innerText = k1;
+            document.getElementById('bobRetrievedKey').innerText = k2;
+        }
+    </script>
+</body>
+</html>
